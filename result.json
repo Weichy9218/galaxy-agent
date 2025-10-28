@@ -1,0 +1,774 @@
+{
+  "task_id": "6851736beb11c800614780df",
+  "factor_results": [
+    {
+      "factor_name": "micro_trend",
+      "outputs": {
+        "trend_direction": "judged(trend_direction)",
+        "strength_score": "judged(strength_score)",
+        "expected_return": "written(expected_return)",
+        "confidence": "written(confidence)",
+        "key_indicators": "written(key_indicators)",
+        "reasoning": "written(reasoning)"
+      },
+      "summary": "因子 micro_trend 输出：\n- trend_direction: judged(trend_direction)\n- strength_score: judged(strength_score)\n- expected_return: written(expected_return)\n- confidence: written(confidence)\n- key_indicators: written(key_indicators)\n- reasoning: written(reasoning)\n决策逻辑: Use Micro composite metric from weighted technical indicators with thresholds ±1% for trend direction and abs(Micro) tiers for strength. Expected return directly from Micro clipped to ±3%. Confidence is higher if underlying indicators consistently support the trend signal.",
+      "decision_logic": "Use Micro composite metric from weighted technical indicators with thresholds ±1% for trend direction and abs(Micro) tiers for strength. Expected return directly from Micro clipped to ±3%. Confidence is higher if underlying indicators consistently support the trend signal.",
+      "tasks": [
+        {
+          "task_id": "fetch_ohlcv_60d",
+          "kind": "fetch",
+          "writes": {
+            "ohlcv_60d": {
+              "open": [
+                114.0,
+                114.23,
+                114.46,
+                114.68,
+                114.91,
+                115.14,
+                115.37,
+                115.6,
+                115.82,
+                116.05,
+                116.28,
+                116.51,
+                116.74,
+                116.96,
+                117.19,
+                117.42,
+                117.65,
+                117.88,
+                118.1,
+                118.33,
+                118.56,
+                118.79,
+                119.02,
+                119.24,
+                119.47,
+                119.7,
+                119.93,
+                120.16,
+                120.38,
+                120.61,
+                120.84,
+                121.07,
+                121.3,
+                121.52,
+                121.75,
+                121.98,
+                122.21,
+                122.44,
+                122.66,
+                122.89,
+                123.12,
+                123.35,
+                123.58,
+                123.8,
+                124.03,
+                124.26,
+                124.49,
+                124.72,
+                124.94,
+                125.17,
+                125.4,
+                125.63,
+                125.86,
+                126.08,
+                126.31,
+                126.54,
+                126.77,
+                127.0,
+                127.22,
+                127.45
+              ],
+              "high": [
+                114.0,
+                114.23,
+                114.46,
+                114.68,
+                114.91,
+                115.14,
+                115.37,
+                115.6,
+                115.82,
+                116.05,
+                116.28,
+                116.51,
+                116.74,
+                116.96,
+                117.19,
+                117.42,
+                117.65,
+                117.88,
+                118.1,
+                118.33,
+                118.56,
+                118.79,
+                119.02,
+                119.24,
+                119.47,
+                119.7,
+                119.93,
+                120.16,
+                120.38,
+                120.61,
+                120.84,
+                121.07,
+                121.3,
+                121.52,
+                121.75,
+                121.98,
+                122.21,
+                122.44,
+                122.66,
+                122.89,
+                123.12,
+                123.35,
+                123.58,
+                123.8,
+                124.03,
+                124.26,
+                124.49,
+                124.72,
+                124.94,
+                125.17,
+                125.4,
+                125.63,
+                125.86,
+                126.08,
+                126.31,
+                126.54,
+                126.77,
+                127.0,
+                127.22,
+                127.45
+              ],
+              "low": [
+                114.0,
+                114.23,
+                114.46,
+                114.68,
+                114.91,
+                115.14,
+                115.37,
+                115.6,
+                115.82,
+                116.05,
+                116.28,
+                116.51,
+                116.74,
+                116.96,
+                117.19,
+                117.42,
+                117.65,
+                117.88,
+                118.1,
+                118.33,
+                118.56,
+                118.79,
+                119.02,
+                119.24,
+                119.47,
+                119.7,
+                119.93,
+                120.16,
+                120.38,
+                120.61,
+                120.84,
+                121.07,
+                121.3,
+                121.52,
+                121.75,
+                121.98,
+                122.21,
+                122.44,
+                122.66,
+                122.89,
+                123.12,
+                123.35,
+                123.58,
+                123.8,
+                124.03,
+                124.26,
+                124.49,
+                124.72,
+                124.94,
+                125.17,
+                125.4,
+                125.63,
+                125.86,
+                126.08,
+                126.31,
+                126.54,
+                126.77,
+                127.0,
+                127.22,
+                127.45
+              ],
+              "close": [
+                114.0,
+                114.23,
+                114.46,
+                114.68,
+                114.91,
+                115.14,
+                115.37,
+                115.6,
+                115.82,
+                116.05,
+                116.28,
+                116.51,
+                116.74,
+                116.96,
+                117.19,
+                117.42,
+                117.65,
+                117.88,
+                118.1,
+                118.33,
+                118.56,
+                118.79,
+                119.02,
+                119.24,
+                119.47,
+                119.7,
+                119.93,
+                120.16,
+                120.38,
+                120.61,
+                120.84,
+                121.07,
+                121.3,
+                121.52,
+                121.75,
+                121.98,
+                122.21,
+                122.44,
+                122.66,
+                122.89,
+                123.12,
+                123.35,
+                123.58,
+                123.8,
+                124.03,
+                124.26,
+                124.49,
+                124.72,
+                124.94,
+                125.17,
+                125.4,
+                125.63,
+                125.86,
+                126.08,
+                126.31,
+                126.54,
+                126.77,
+                127.0,
+                127.22,
+                127.45
+              ],
+              "volume": [
+                114.0,
+                114.23,
+                114.46,
+                114.68,
+                114.91,
+                115.14,
+                115.37,
+                115.6,
+                115.82,
+                116.05,
+                116.28,
+                116.51,
+                116.74,
+                116.96,
+                117.19,
+                117.42,
+                117.65,
+                117.88,
+                118.1,
+                118.33,
+                118.56,
+                118.79,
+                119.02,
+                119.24,
+                119.47,
+                119.7,
+                119.93,
+                120.16,
+                120.38,
+                120.61,
+                120.84,
+                121.07,
+                121.3,
+                121.52,
+                121.75,
+                121.98,
+                122.21,
+                122.44,
+                122.66,
+                122.89,
+                123.12,
+                123.35,
+                123.58,
+                123.8,
+                124.03,
+                124.26,
+                124.49,
+                124.72,
+                124.94,
+                125.17,
+                125.4,
+                125.63,
+                125.86,
+                126.08,
+                126.31,
+                126.54,
+                126.77,
+                127.0,
+                127.22,
+                127.45
+              ]
+            }
+          },
+          "detail": "Fetched data via financial_data"
+        },
+        {
+          "task_id": "compute_mic_trend_indicators",
+          "kind": "compute",
+          "writes": {
+            "r_5d": "computed(r_5d)",
+            "MA20": "computed(MA20)",
+            "gap_MA20": "computed(gap_MA20)",
+            "RSI14": "computed(RSI14)",
+            "RSI_14_norm": "computed(RSI_14_norm)",
+            "Micro": "computed(Micro)"
+          },
+          "detail": "Computed: r_5d = (close_0 / close_-5) - 1; MA20 = 20-day moving average of close; gap_MA20 = (close_0 - MA20_0) / MA20_0; RSI14 computed with standard 14-day RSI; RSI_14_norm = clip((RSI14 - 50) / 50, -1, 1); Micro = 0.5 * r_5d + 0.3 * gap_MA20 + 0.2 * RSI_14_norm; Clip Micro to [-0.03, 0.03]."
+        },
+        {
+          "task_id": "judge_trend_direction_strength",
+          "kind": "judge",
+          "writes": {
+            "trend_direction": "judged(trend_direction)",
+            "strength_score": "judged(strength_score)"
+          },
+          "detail": "Judged with rule: If Micro > 0.01 then trend_direction = 'Up'; else if Micro < -0.01 then trend_direction = 'Down'; else trend_direction = 'Neutral'; Strength score tiers: abs(Micro) > 0.02 strong, >0.01 moderate, else weak."
+        },
+        {
+          "task_id": "write_micro_expected_confidence",
+          "kind": "write",
+          "writes": {
+            "expected_return": "written(expected_return)",
+            "confidence": "written(confidence)"
+          },
+          "detail": "Recorded final outputs"
+        },
+        {
+          "task_id": "write_micro_key_indicators_reasoning",
+          "kind": "write",
+          "writes": {
+            "key_indicators": "written(key_indicators)",
+            "reasoning": "written(reasoning)"
+          },
+          "detail": "Recorded final outputs"
+        }
+      ]
+    },
+    {
+      "factor_name": "macro_sector_trend",
+      "outputs": {
+        "sector": "MockSector#4",
+        "sector_trend": "judged(sector_trend)",
+        "sector_return_1m": "written(sector_return_1m)",
+        "stock_beta": {
+          "close": [
+            114.0,
+            114.23,
+            114.46,
+            114.68,
+            114.91,
+            115.14,
+            115.37,
+            115.6,
+            115.82,
+            116.05,
+            116.28,
+            116.51,
+            116.74,
+            116.96,
+            117.19,
+            117.42,
+            117.65,
+            117.88,
+            118.1,
+            118.33
+          ],
+          "sector": "MockSector#4",
+          "beta": 1.24
+        },
+        "expected_return": "computed(expected_return)",
+        "confidence": "computed(confidence)",
+        "market_environment": "judged(market_environment)",
+        "reasoning": "written(reasoning)"
+      },
+      "summary": "因子 macro_sector_trend 输出：\n- sector: MockSector#4\n- sector_trend: judged(sector_trend)\n- sector_return_1m: written(sector_return_1m)\n- stock_beta: {'close': [114.0, 114.23, 114.46, 114.68, 114.91, 115.14, 115.37, 115.6, 115.82, 116.05, 116.28, 116.51, 116.74, 116.96, 117.19, 117.42, 117.65, 117.88, 118.1, 118.33], 'sector': 'MockSector#4', 'beta': 1.24}\n- expected_return: computed(expected_return)\n- confidence: computed(confidence)\n- market_environment: judged(market_environment)\n- reasoning: written(reasoning)\n决策逻辑: Determine sector trend by magnitude of sector 5-day return and market environment by index return sign. Compute expected return as weighted sum of index, sector, and relative returns capped at ±2%. Confidence depends on directional agreement.",
+      "decision_logic": "Determine sector trend by magnitude of sector 5-day return and market environment by index return sign. Compute expected return as weighted sum of index, sector, and relative returns capped at ±2%. Confidence depends on directional agreement.",
+      "tasks": [
+        {
+          "task_id": "fetch_spy_20d",
+          "kind": "fetch",
+          "writes": {
+            "index_close_20d": {
+              "close": [
+                113.0,
+                113.23,
+                113.45,
+                113.68,
+                113.9,
+                114.13,
+                114.36,
+                114.58,
+                114.81,
+                115.03,
+                115.26,
+                115.49,
+                115.71,
+                115.94,
+                116.16,
+                116.39,
+                116.62,
+                116.84,
+                117.07,
+                117.29
+              ]
+            }
+          },
+          "detail": "Fetched data via financial_data"
+        },
+        {
+          "task_id": "fetch_sector_etf_20d",
+          "kind": "fetch",
+          "writes": {
+            "sector_close_20d": {
+              "close": [
+                149.0,
+                149.3,
+                149.6,
+                149.89,
+                150.19,
+                150.49,
+                150.79,
+                151.09,
+                151.38,
+                151.68,
+                151.98,
+                152.28,
+                152.58,
+                152.87,
+                153.17,
+                153.47,
+                153.77,
+                154.07,
+                154.36,
+                154.66
+              ]
+            }
+          },
+          "detail": "Fetched data via financial_data"
+        },
+        {
+          "task_id": "fetch_stock_20d_close_metadata",
+          "kind": "fetch",
+          "writes": {
+            "stock_close_20d": {
+              "close": [
+                114.0,
+                114.23,
+                114.46,
+                114.68,
+                114.91,
+                115.14,
+                115.37,
+                115.6,
+                115.82,
+                116.05,
+                116.28,
+                116.51,
+                116.74,
+                116.96,
+                117.19,
+                117.42,
+                117.65,
+                117.88,
+                118.1,
+                118.33
+              ],
+              "sector": "MockSector#4",
+              "beta": 1.24
+            },
+            "sector": "MockSector#4",
+            "stock_beta": {
+              "close": [
+                114.0,
+                114.23,
+                114.46,
+                114.68,
+                114.91,
+                115.14,
+                115.37,
+                115.6,
+                115.82,
+                116.05,
+                116.28,
+                116.51,
+                116.74,
+                116.96,
+                117.19,
+                117.42,
+                117.65,
+                117.88,
+                118.1,
+                118.33
+              ],
+              "sector": "MockSector#4",
+              "beta": 1.24
+            }
+          },
+          "detail": "Fetched data via financial_data"
+        },
+        {
+          "task_id": "compute_macro_indicators_returns",
+          "kind": "compute",
+          "writes": {
+            "r_5d_index": "computed(r_5d_index)",
+            "r_5d_sector": "computed(r_5d_sector)",
+            "r_20d_stock": "computed(r_20d_stock)",
+            "RS_20d": "computed(RS_20d)"
+          },
+          "detail": "Computed: r_5d_index = (index_close_20d_latest / index_close_20d_5_days_ago) - 1; r_5d_sector = (sector_close_20d_latest / sector_close_20d_5_days_ago) - 1; r_20d_stock = (stock_close_20d_latest / stock_close_20d_20_days_ago) - 1; RS_20d = r_20d_stock - r_20d_index."
+        },
+        {
+          "task_id": "compute_macro_composite",
+          "kind": "compute",
+          "writes": {
+            "expected_return": "computed(expected_return)"
+          },
+          "detail": "Computed: Macro = 0.5 * r_5d_index + 0.3 * r_5d_sector + 0.2 * RS_20d; expected_return = clip(Macro, -0.02, 0.02)."
+        },
+        {
+          "task_id": "judge_sector_trend_market_env",
+          "kind": "judge",
+          "writes": {
+            "sector_trend": "judged(sector_trend)",
+            "market_environment": "judged(market_environment)"
+          },
+          "detail": "Judged with rule: If abs(r_5d_sector) > 0.02, sector_trend = 'Strong'; else if abs(r_5d_sector) > 0.01, sector_trend = 'Moderate'; else 'Weak'; market_environment = 'Risk-on' if r_5d_index > 0 else 'Risk-off'."
+        },
+        {
+          "task_id": "adjust_confidence_macro",
+          "kind": "compute",
+          "writes": {
+            "confidence": "computed(confidence)"
+          },
+          "detail": "Computed: confidence = 'High' if sign(r_5d_index) == sign(r_5d_sector) == sign(RS_20d) else 'Moderate'."
+        },
+        {
+          "task_id": "write_macro_reasoning",
+          "kind": "write",
+          "writes": {
+            "reasoning": "written(reasoning)"
+          },
+          "detail": "Recorded final outputs"
+        },
+        {
+          "task_id": "auto_sector_return_1m",
+          "kind": "write",
+          "writes": {
+            "sector_return_1m": "written(sector_return_1m)"
+          },
+          "detail": "Recorded final outputs"
+        }
+      ]
+    },
+    {
+      "factor_name": "valuation_correction",
+      "outputs": {
+        "valuation_status": "written(valuation_status)",
+        "current_PE": "computed(current_PE)",
+        "historical_avg_PE": "computed(historical_avg_PE)",
+        "current_PB": "computed(current_PB)",
+        "historical_avg_PB": "computed(historical_avg_PB)",
+        "correction_direction": "judged(correction_direction)",
+        "expected_return": "computed(expected_return)",
+        "confidence": "judged(confidence)",
+        "reasoning": "written(reasoning)"
+      },
+      "summary": "因子 valuation_correction 输出：\n- valuation_status: written(valuation_status)\n- current_PE: computed(current_PE)\n- historical_avg_PE: computed(historical_avg_PE)\n- current_PB: computed(current_PB)\n- historical_avg_PB: computed(historical_avg_PB)\n- correction_direction: judged(correction_direction)\n- expected_return: computed(expected_return)\n- confidence: judged(confidence)\n- reasoning: written(reasoning)\n决策逻辑: Use z-scores of PE and PB to create a valuation signal. Correction direction assigned by sign of combined Val score with thresholds. Expected return capped ±1%. Confidence depends on data coverage and magnitude of z-scores.",
+      "decision_logic": "Use z-scores of PE and PB to create a valuation signal. Correction direction assigned by sign of combined Val score with thresholds. Expected return capped ±1%. Confidence depends on data coverage and magnitude of z-scores.",
+      "tasks": [
+        {
+          "task_id": "fetch_pe_pb_1y",
+          "kind": "fetch",
+          "writes": {
+            "pe_1y": {
+              "pe": [
+                114.0,
+                114.23,
+                114.46,
+                114.68,
+                114.91
+              ],
+              "pb": [
+                114.0,
+                114.23,
+                114.46,
+                114.68,
+                114.91
+              ]
+            },
+            "pb_1y": {
+              "pe": [
+                114.0,
+                114.23,
+                114.46,
+                114.68,
+                114.91
+              ],
+              "pb": [
+                114.0,
+                114.23,
+                114.46,
+                114.68,
+                114.91
+              ]
+            }
+          },
+          "detail": "Fetched data via financial_data"
+        },
+        {
+          "task_id": "compute_val_z_scores",
+          "kind": "compute",
+          "writes": {
+            "current_PE": "computed(current_PE)",
+            "historical_avg_PE": "computed(historical_avg_PE)",
+            "z_PE_52w": "computed(z_PE_52w)",
+            "current_PB": "computed(current_PB)",
+            "historical_avg_PB": "computed(historical_avg_PB)",
+            "z_PB_52w": "computed(z_PB_52w)"
+          },
+          "detail": "Computed: current_PE = last pe_1y value; historical_avg_PE = mean of pe_1y; std_PE = standard deviation of pe_1y; z_PE_52w = (current_PE - historical_avg_PE) / std_PE; similarly for PB: current_PB, historical_avg_PB, std_PB, z_PB_52w."
+        },
+        {
+          "task_id": "compute_valuation_signal",
+          "kind": "compute",
+          "writes": {
+            "expected_return": "computed(expected_return)"
+          },
+          "detail": "Computed: Val = -0.5 * z_PE_52w -0.5 * z_PB_52w; expected_return = clip(Val * 0.005, -0.01, 0.01)."
+        },
+        {
+          "task_id": "judge_correction_direction_and_confidence",
+          "kind": "judge",
+          "writes": {
+            "correction_direction": "judged(correction_direction)",
+            "confidence": "judged(confidence)"
+          },
+          "detail": "Judged with rule: correction_direction = 'Positive' if Val > 0.05 else ('Negative' if Val < -0.05 else 'Neutral'); confidence = 'High' if coverage of valid PE/PB data > 0.8 and abs(z_PE_52w) + abs(z_PB_52w) > 1 else 'Low'."
+        },
+        {
+          "task_id": "write_valuation_status_reasoning",
+          "kind": "write",
+          "writes": {
+            "valuation_status": "written(valuation_status)",
+            "reasoning": "written(reasoning)"
+          },
+          "detail": "Recorded final outputs"
+        }
+      ]
+    },
+    {
+      "factor_name": "event_news_impact",
+      "outputs": {
+        "events": "written(events)",
+        "overall_sentiment": "computed(overall_sentiment)",
+        "expected_return": "written(expected_return)",
+        "confidence": "written(confidence)",
+        "impact_duration": "computed(impact_duration)",
+        "reasoning": "written(reasoning)"
+      },
+      "summary": "因子 event_news_impact 输出：\n- events: written(events)\n- overall_sentiment: computed(overall_sentiment)\n- expected_return: written(expected_return)\n- confidence: written(confidence)\n- impact_duration: computed(impact_duration)\n- reasoning: written(reasoning)\n决策逻辑: Combine weighted, time-decayed news sentiment score with fundamental earnings surprise proxy into overall event shock signal. Use thresholds on epsilon_event to determine sentiment. Assign expected return up to ±4%. Confidence from source trust and corroboration levels. Impact duration depends on event classification as structural or routine.",
+      "decision_logic": "Combine weighted, time-decayed news sentiment score with fundamental earnings surprise proxy into overall event shock signal. Use thresholds on epsilon_event to determine sentiment. Assign expected return up to ±4%. Confidence from source trust and corroboration levels. Impact duration depends on event classification as structural or routine.",
+      "tasks": [
+        {
+          "task_id": "fetch_news_14d",
+          "kind": "fetch",
+          "writes": {
+            "news_articles_14d": {
+              "result": "mock_result",
+              "meta": {
+                "query": "AAPL earnings OR results OR guidance OR M&A OR litigation OR SEC",
+                "recency_days": "14",
+                "limit": 20
+              }
+            }
+          },
+          "detail": "Fetched data via web_search"
+        },
+        {
+          "task_id": "extract_news_events_sentiment",
+          "kind": "extract",
+          "writes": {
+            "parsed_news_events": "unhandled(parsed_news_events)"
+          },
+          "detail": "Task type not recognized, copied instructions."
+        },
+        {
+          "task_id": "compute_news_shock",
+          "kind": "compute",
+          "writes": {
+            "news_shock": "computed(news_shock)"
+          },
+          "detail": "Computed: news_shock = sum over events of (sentiment_score * source_weight * exp(-age_days / 7)) normalized to [-1,1]."
+        },
+        {
+          "task_id": "compute_fund_shock",
+          "kind": "compute",
+          "writes": {
+            "fund_shock": "computed(fund_shock)"
+          },
+          "detail": "Computed: fund_shock = average normalized earnings surprise and revenue surprise if reported, else 0, clipped to [-1,1]."
+        },
+        {
+          "task_id": "compute_overall_event_epsilon",
+          "kind": "compute",
+          "writes": {
+            "epsilon_event": "computed(epsilon_event)",
+            "overall_sentiment": "computed(overall_sentiment)",
+            "impact_duration": "computed(impact_duration)"
+          },
+          "detail": "Computed: epsilon_event = clip(0.5 * fund_shock + 0.5 * news_shock, -1, 1); overall_sentiment = 'Positive' if epsilon_event > 0.1 else ('Negative' if epsilon_event < -0.1 else 'Neutral'); impact_duration = 'Long' if event_type structural else 'Short'."
+        },
+        {
+          "task_id": "write_event_expected_confidence_reasoning",
+          "kind": "write",
+          "writes": {
+            "expected_return": "written(expected_return)",
+            "confidence": "written(confidence)",
+            "reasoning": "written(reasoning)"
+          },
+          "detail": "Recorded final outputs"
+        },
+        {
+          "task_id": "write_events_list",
+          "kind": "write",
+          "writes": {
+            "events": "written(events)"
+          },
+          "detail": "Recorded final outputs"
+        }
+      ]
+    }
+  ],
+  "global_summary": "任务 6851736beb11c800614780df 的因子执行完成，基于假设：All financial data is accurate and updated to the latest available trading day. Market open days align with regular US stock exchange trading days. Computations assume no corporate actions affecting price continuity within the lookback periods. Source reliability and recency weights are applied as per know-how seed. PE and PB data have sufficient coverage for reliable z-score computations.。\n各因子结果概览：\n- micro_trend: 关键输出 written(expected_return)\n- macro_sector_trend: 关键输出 computed(expected_return)\n- valuation_correction: 关键输出 computed(expected_return)\n- event_news_impact: 关键输出 written(expected_return)"
+}
