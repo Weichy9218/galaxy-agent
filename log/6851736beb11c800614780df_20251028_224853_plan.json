@@ -1,0 +1,451 @@
+{
+  "task": {
+    "task_id": "6851736beb11c800614780df",
+    "task_type": "stock_intraday_low",
+    "target_entity": "AAPL",
+    "target_metric": "day_low_price",
+    "event_description": "2025-10-24 (GMT+8), What will the low of Apple stock (AAPL) be for the day?",
+    "resolved_time": "2025-10-24 (GMT+8)",
+    "answer_instructions": "Your final answer MUST end with this exact format:\n        \\boxed{YOUR_PREDICTION}\n        Do not use any other format. Do not refuse to make a prediction. Do not say \"I cannot predict the future.\" You must make a clear prediction based on the best data currently available, using the box format specified above."
+  },
+  "global_assumptions": "All financial data is accurate and updated to the latest available trading day. Market open days align with regular US stock exchange trading days. Computations assume no corporate actions affecting price continuity within the lookback periods. Source reliability and recency weights are applied as per know-how seed. PE and PB data have sufficient coverage for reliable z-score computations.",
+  "placeholders": {
+    "${ticker}": "AAPL",
+    "${index_ticker}": "SPY",
+    "${range_60d}": "60d",
+    "${range_20d}": "20d",
+    "${range_1y}": "1y",
+    "${interval_1d}": "1d",
+    "${news_query}": "AAPL earnings OR results OR guidance OR M&A OR litigation OR SEC",
+    "${news_days}": "14"
+  },
+  "factors": [
+    {
+      "factor_name": "micro_trend",
+      "decision_logic": "Use Micro composite metric from weighted technical indicators with thresholds ±1% for trend direction and abs(Micro) tiers for strength. Expected return directly from Micro clipped to ±3%. Confidence is higher if underlying indicators consistently support the trend signal.",
+      "output_fields": [
+        "trend_direction",
+        "strength_score",
+        "expected_return",
+        "confidence",
+        "key_indicators",
+        "reasoning"
+      ],
+      "variables": {},
+      "notes": "",
+      "tasks": [
+        {
+          "id": "fetch_ohlcv_60d",
+          "kind": "fetch",
+          "goal": "Obtain 60 days of daily OHLCV data for ${ticker}",
+          "tool": "financial_data",
+          "params": {
+            "ticker": "${ticker}",
+            "range": "${range_60d}",
+            "interval": "${interval_1d}",
+            "fields": [
+              "open",
+              "high",
+              "low",
+              "close",
+              "volume"
+            ]
+          },
+          "compute": null,
+          "writes": [
+            "ohlcv_60d"
+          ]
+        },
+        {
+          "id": "compute_mic_trend_indicators",
+          "kind": "compute",
+          "goal": "Calculate returns, moving averages, RSI and normalized indicators for micro trend",
+          "tool": null,
+          "params": {},
+          "compute": "r_5d = (close_0 / close_-5) - 1; MA20 = 20-day moving average of close; gap_MA20 = (close_0 - MA20_0) / MA20_0; RSI14 computed with standard 14-day RSI; RSI_14_norm = clip((RSI14 - 50) / 50, -1, 1); Micro = 0.5 * r_5d + 0.3 * gap_MA20 + 0.2 * RSI_14_norm; Clip Micro to [-0.03, 0.03].",
+          "writes": [
+            "r_5d",
+            "MA20",
+            "gap_MA20",
+            "RSI14",
+            "RSI_14_norm",
+            "Micro"
+          ]
+        },
+        {
+          "id": "judge_trend_direction_strength",
+          "kind": "judge",
+          "goal": "Determine trend direction and strength tier from Micro value",
+          "tool": null,
+          "params": {},
+          "compute": "If Micro > 0.01 then trend_direction = 'Up'; else if Micro < -0.01 then trend_direction = 'Down'; else trend_direction = 'Neutral'; Strength score tiers: abs(Micro) > 0.02 strong, >0.01 moderate, else weak.",
+          "writes": [
+            "trend_direction",
+            "strength_score"
+          ]
+        },
+        {
+          "id": "write_micro_expected_confidence",
+          "kind": "write",
+          "goal": "Write expected_return clipped to ±3% from Micro and confidence based on indicator alignment",
+          "tool": null,
+          "params": {},
+          "compute": "expected_return = clip(Micro, -0.03, 0.03); confidence based on consistency of r_5d, gap_MA20, RSI_14_norm signs and strength tiers; confidence higher if all aligned and strength strong.",
+          "writes": [
+            "expected_return",
+            "confidence"
+          ]
+        },
+        {
+          "id": "write_micro_key_indicators_reasoning",
+          "kind": "write",
+          "goal": "Prepare key indicators summary and reasoning for micro trend",
+          "tool": null,
+          "params": {},
+          "compute": "key_indicators = {r_5d, MA20, gap_MA20, RSI14, RSI_14_norm, Micro}; reasoning = 'Composite metric Micro calculated from 5-day return, 20-day MA gap, and normalized RSI balance signals short-term technical trend with indicator alignment used to gauge confidence.'",
+          "writes": [
+            "key_indicators",
+            "reasoning"
+          ]
+        }
+      ]
+    },
+    {
+      "factor_name": "macro_sector_trend",
+      "decision_logic": "Determine sector trend by magnitude of sector 5-day return and market environment by index return sign. Compute expected return as weighted sum of index, sector, and relative returns capped at ±2%. Confidence depends on directional agreement.",
+      "output_fields": [
+        "sector",
+        "sector_trend",
+        "sector_return_1m",
+        "stock_beta",
+        "expected_return",
+        "confidence",
+        "market_environment",
+        "reasoning"
+      ],
+      "variables": {},
+      "notes": "",
+      "tasks": [
+        {
+          "id": "fetch_spy_20d",
+          "kind": "fetch",
+          "goal": "Fetch 20-day close prices for SPY to represent market index",
+          "tool": "financial_data",
+          "params": {
+            "ticker": "${index_ticker}",
+            "range": "${range_20d}",
+            "interval": "${interval_1d}",
+            "fields": [
+              "close"
+            ]
+          },
+          "compute": null,
+          "writes": [
+            "index_close_20d"
+          ]
+        },
+        {
+          "id": "fetch_sector_etf_20d",
+          "kind": "fetch",
+          "goal": "Get sector ETF close prices for 20 days; Identify sector ETF corresponding to ${ticker}",
+          "tool": "financial_data",
+          "params": {
+            "ticker": "Sector_ETF_of_${ticker}",
+            "range": "${range_20d}",
+            "interval": "${interval_1d}",
+            "fields": [
+              "close"
+            ]
+          },
+          "compute": null,
+          "writes": [
+            "sector_close_20d"
+          ]
+        },
+        {
+          "id": "fetch_stock_20d_close_metadata",
+          "kind": "fetch",
+          "goal": "Fetch ${ticker} 20-day close price and retrieve sector and beta metadata",
+          "tool": "financial_data",
+          "params": {
+            "ticker": "${ticker}",
+            "range": "${range_20d}",
+            "interval": "${interval_1d}",
+            "fields": [
+              "close",
+              "sector",
+              "beta"
+            ]
+          },
+          "compute": null,
+          "writes": [
+            "stock_close_20d",
+            "sector",
+            "stock_beta"
+          ]
+        },
+        {
+          "id": "compute_macro_indicators_returns",
+          "kind": "compute",
+          "goal": "Compute 5-day returns for index and sector, 20-day return for stock, and relative strength",
+          "tool": null,
+          "params": {},
+          "compute": "r_5d_index = (index_close_20d_latest / index_close_20d_5_days_ago) - 1; r_5d_sector = (sector_close_20d_latest / sector_close_20d_5_days_ago) - 1; r_20d_stock = (stock_close_20d_latest / stock_close_20d_20_days_ago) - 1; RS_20d = r_20d_stock - r_20d_index.",
+          "writes": [
+            "r_5d_index",
+            "r_5d_sector",
+            "r_20d_stock",
+            "RS_20d"
+          ]
+        },
+        {
+          "id": "compute_macro_composite",
+          "kind": "compute",
+          "goal": "Calculate Macro composite score from weighted returns",
+          "tool": null,
+          "params": {},
+          "compute": "Macro = 0.5 * r_5d_index + 0.3 * r_5d_sector + 0.2 * RS_20d; expected_return = clip(Macro, -0.02, 0.02).",
+          "writes": [
+            "expected_return"
+          ]
+        },
+        {
+          "id": "judge_sector_trend_market_env",
+          "kind": "judge",
+          "goal": "Evaluate sector trend based on absolute 5-day sector return and classify market environment",
+          "tool": null,
+          "params": {},
+          "compute": "If abs(r_5d_sector) > 0.02, sector_trend = 'Strong'; else if abs(r_5d_sector) > 0.01, sector_trend = 'Moderate'; else 'Weak'; market_environment = 'Risk-on' if r_5d_index > 0 else 'Risk-off'.",
+          "writes": [
+            "sector_trend",
+            "market_environment"
+          ]
+        },
+        {
+          "id": "adjust_confidence_macro",
+          "kind": "compute",
+          "goal": "Adjust confidence based on alignment of index, sector, and relative strength direction",
+          "tool": null,
+          "params": {},
+          "compute": "confidence = 'High' if sign(r_5d_index) == sign(r_5d_sector) == sign(RS_20d) else 'Moderate'.",
+          "writes": [
+            "confidence"
+          ]
+        },
+        {
+          "id": "write_macro_reasoning",
+          "kind": "write",
+          "goal": "Summarize reasoning including sector identification and composite macro context",
+          "tool": null,
+          "params": {},
+          "compute": "reasoning = 'Macro composite calculated from recent market, sector, and relative strength returns with sector trend and market environment providing contextual interpretation. Confidence reflects directional alignment of indicators.'",
+          "writes": [
+            "reasoning"
+          ]
+        },
+        {
+          "id": "auto_sector_return_1m",
+          "kind": "write",
+          "goal": "补充写入 sector_return_1m（自动生成）",
+          "tool": null,
+          "params": {},
+          "compute": "总结前序步骤结果，填充 sector_return_1m 字段。",
+          "writes": [
+            "sector_return_1m"
+          ]
+        }
+      ]
+    },
+    {
+      "factor_name": "valuation_correction",
+      "decision_logic": "Use z-scores of PE and PB to create a valuation signal. Correction direction assigned by sign of combined Val score with thresholds. Expected return capped ±1%. Confidence depends on data coverage and magnitude of z-scores.",
+      "output_fields": [
+        "valuation_status",
+        "current_PE",
+        "historical_avg_PE",
+        "current_PB",
+        "historical_avg_PB",
+        "correction_direction",
+        "expected_return",
+        "confidence",
+        "reasoning"
+      ],
+      "variables": {},
+      "notes": "",
+      "tasks": [
+        {
+          "id": "fetch_pe_pb_1y",
+          "kind": "fetch",
+          "goal": "Retrieve 1-year daily PE and PB ratios for ${ticker}",
+          "tool": "financial_data",
+          "params": {
+            "ticker": "${ticker}",
+            "range": "${range_1y}",
+            "interval": "${interval_1d}",
+            "fields": [
+              "pe",
+              "pb"
+            ]
+          },
+          "compute": null,
+          "writes": [
+            "pe_1y",
+            "pb_1y"
+          ]
+        },
+        {
+          "id": "compute_val_z_scores",
+          "kind": "compute",
+          "goal": "Compute current, average and z-scores for PE and PB over 52 weeks",
+          "tool": null,
+          "params": {},
+          "compute": "current_PE = last pe_1y value; historical_avg_PE = mean of pe_1y; std_PE = standard deviation of pe_1y; z_PE_52w = (current_PE - historical_avg_PE) / std_PE; similarly for PB: current_PB, historical_avg_PB, std_PB, z_PB_52w.",
+          "writes": [
+            "current_PE",
+            "historical_avg_PE",
+            "z_PE_52w",
+            "current_PB",
+            "historical_avg_PB",
+            "z_PB_52w"
+          ]
+        },
+        {
+          "id": "compute_valuation_signal",
+          "kind": "compute",
+          "goal": "Calculate valuation mean-reversion signal and expected return correction",
+          "tool": null,
+          "params": {},
+          "compute": "Val = -0.5 * z_PE_52w -0.5 * z_PB_52w; expected_return = clip(Val * 0.005, -0.01, 0.01).",
+          "writes": [
+            "expected_return"
+          ]
+        },
+        {
+          "id": "judge_correction_direction_and_confidence",
+          "kind": "judge",
+          "goal": "Determine correction direction and confidence based on Val magnitude and data coverage",
+          "tool": null,
+          "params": {},
+          "compute": "correction_direction = 'Positive' if Val > 0.05 else ('Negative' if Val < -0.05 else 'Neutral'); confidence = 'High' if coverage of valid PE/PB data > 0.8 and abs(z_PE_52w) + abs(z_PB_52w) > 1 else 'Low'.",
+          "writes": [
+            "correction_direction",
+            "confidence"
+          ]
+        },
+        {
+          "id": "write_valuation_status_reasoning",
+          "kind": "write",
+          "goal": "Summarize valuation status and reasoning for mean reversion expectation",
+          "tool": null,
+          "params": {},
+          "compute": "valuation_status = 'Overvalued' if correction_direction == 'Negative' else ('Undervalued' if correction_direction == 'Positive' else 'Fair-valued'); reasoning = 'Valuation signals from PE and PB z-scores indicate mean-reversion with correction direction and confidence derived from statistical significance of deviations and data coverage.'",
+          "writes": [
+            "valuation_status",
+            "reasoning"
+          ]
+        }
+      ]
+    },
+    {
+      "factor_name": "event_news_impact",
+      "decision_logic": "Combine weighted, time-decayed news sentiment score with fundamental earnings surprise proxy into overall event shock signal. Use thresholds on epsilon_event to determine sentiment. Assign expected return up to ±4%. Confidence from source trust and corroboration levels. Impact duration depends on event classification as structural or routine.",
+      "output_fields": [
+        "events",
+        "overall_sentiment",
+        "expected_return",
+        "confidence",
+        "impact_duration",
+        "reasoning"
+      ],
+      "variables": {},
+      "notes": "",
+      "tasks": [
+        {
+          "id": "fetch_news_14d",
+          "kind": "fetch",
+          "goal": "Conduct web search for news on ${ticker} over last 14 days covering earnings, guidance, M&A, litigation, SEC filings",
+          "tool": "web_search",
+          "params": {
+            "query": "${news_query}",
+            "recency_days": "${news_days}",
+            "limit": 20
+          },
+          "compute": null,
+          "writes": [
+            "news_articles_14d"
+          ]
+        },
+        {
+          "id": "extract_news_events_sentiment",
+          "kind": "extract",
+          "goal": "Parse articles for timestamp, source, event type, numeric surprises if present",
+          "tool": null,
+          "params": {},
+          "compute": "For each article, extract {timestamp, source, event_type, earnings_surprise (if any), revenue_surprise (if any)}; assign source weights: official filings highest, reputable media next, then analyst, then social.",
+          "writes": [
+            "parsed_news_events"
+          ]
+        },
+        {
+          "id": "compute_news_shock",
+          "kind": "compute",
+          "goal": "Compute time-decayed sentiment news shock in [-1,1] weighted by source reliability and decay",
+          "tool": null,
+          "params": {},
+          "compute": "news_shock = sum over events of (sentiment_score * source_weight * exp(-age_days / 7)) normalized to [-1,1].",
+          "writes": [
+            "news_shock"
+          ]
+        },
+        {
+          "id": "compute_fund_shock",
+          "kind": "compute",
+          "goal": "Compute fundamental shock proxy from EPS and revenue surprises",
+          "tool": null,
+          "params": {},
+          "compute": "fund_shock = average normalized earnings surprise and revenue surprise if reported, else 0, clipped to [-1,1].",
+          "writes": [
+            "fund_shock"
+          ]
+        },
+        {
+          "id": "compute_overall_event_epsilon",
+          "kind": "compute",
+          "goal": "Combine news and fundamental shocks into epsilon event and classify sentiment and impact duration",
+          "tool": null,
+          "params": {},
+          "compute": "epsilon_event = clip(0.5 * fund_shock + 0.5 * news_shock, -1, 1); overall_sentiment = 'Positive' if epsilon_event > 0.1 else ('Negative' if epsilon_event < -0.1 else 'Neutral'); impact_duration = 'Long' if event_type structural else 'Short'.",
+          "writes": [
+            "epsilon_event",
+            "overall_sentiment",
+            "impact_duration"
+          ]
+        },
+        {
+          "id": "write_event_expected_confidence_reasoning",
+          "kind": "write",
+          "goal": "Write expected return capped at ±4% from epsilon event and confidence by source quality and corroboration",
+          "tool": null,
+          "params": {},
+          "compute": "expected_return = clip(epsilon_event * 0.02, -0.04, 0.04); confidence = 'High' if multiple official/reliable sources corroborate, 'Medium' if moderate, else 'Low'; reasoning = 'Event-driven return adjustments based on time-decayed sentiment weighted by source reliability combined with fundamental earnings surprise proxy; impact duration driven by event type.'",
+          "writes": [
+            "expected_return",
+            "confidence",
+            "reasoning"
+          ]
+        },
+        {
+          "id": "write_events_list",
+          "kind": "write",
+          "goal": "List key parsed events for record",
+          "tool": null,
+          "params": {},
+          "compute": "events = parsed_news_events.",
+          "writes": [
+            "events"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -8,6 +8,13 @@ class StockPriceKnowHow(BaseKnowHow):
     DOMAIN = "finance"
     SUB_DOMAIN = "stock_price"
     DESCRIPTION = "Predict stock closing price or price movement at a specific future date"
+    TASK_TYPE_ALIASES = [
+        "stock_price",
+        "finance.stock_price",
+        "finance/stock_price",
+        "stock_intraday_low",
+        "stock_intraday_high",
+    ]
 
     APPLICABLE_SCENARIOS = [
         "Predict stock closing price at a future date",

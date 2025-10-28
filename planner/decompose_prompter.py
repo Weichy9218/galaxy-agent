@@ -4,7 +4,7 @@ from typing import Tuple, Dict, Any
 from core.schemas.PredictionTask import PredictionTask
 from core.schemas.knowhow_base import BaseKnowHow
 
-# 升级后的 JSON Schema：用 tasks 取代 data_calls + step_by_step
+
 DECOMPOSE_OUTPUT_JSON_SCHEMA: Dict[str, Any] = {
     "type": "object",
     "required": ["global_assumptions", "placeholders", "factors"],
@@ -59,6 +59,7 @@ DECOMPOSE_OUTPUT_JSON_SCHEMA: Dict[str, Any] = {
     "additionalProperties": False
 }
 
+
 def build_decompose_prompt(task: PredictionTask, knowhow: BaseKnowHow,
                            json_schema: Dict[str, Any] = DECOMPOSE_OUTPUT_JSON_SCHEMA) -> Tuple[str, str]:
     """
@@ -92,7 +93,7 @@ def build_decompose_prompt(task: PredictionTask, knowhow: BaseKnowHow,
             "question": getattr(task, "question", ""),
             "constraints": getattr(task, "constraints", {})
         },
-        "knowhow_seed": seed,
+        "knowhow_seed": seed, # 全部的factos
         "allowed_tools": knowhow.allowed_tools,  # 仅作为接口位；尚未建设也可传 {}
         "json_schema": json_schema,
         "generation_notes": {

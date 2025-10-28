@@ -4,14 +4,14 @@
 """
 
 import json
-import os
+import argparse
 from datetime import datetime
 from pathlib import Path
 
-from core.llm.openrouter_mini_client import OpenRouterMiniClient
-from knowhow_store.finance.stock_price import StockPriceKnowHow
+from core.llm.openrouter_client import OpenRouterClient
 from planner.decompose_agent import DecomposeAgent
 from core.schemas.PredictionTask import PredictionTask
+from core.utils.smart_matcher import SmartMatcher
 
 def save_plan_to_log(plan, task_id: str, log_dir: str = "log"):
     """
@@ -80,28 +80,63 @@ def save_plan_to_log(plan, task_id: str, log_dir: str = "log"):
     return filepath
 
 
-# 使用 mini 客户端进行测试
-llm = OpenRouterMiniClient(
+# 使用 mini 客户端进行测试（支持 --task-id 从数据集中加载任务）
+llm = OpenRouterClient(
     model="openai/gpt-4.1-mini",  # 使用 mini 版本降低成本
     max_tokens=16000,
     temperature=0  # 测试时使用 0 温度以获得确定性结果
 )
 
-knowhow = StockPriceKnowHow()
+# 解析命令行参数（支持 --task-id 与 --data-path 可选）
+parser = argparse.ArgumentParser()
+parser.add_argument("--task-id", dest="task_id", type=str, default=None, help="Task ID to load from JSONL")
+parser.add_argument("--data-path", dest="data_path", type=str, default=None, help="Path to JSONL data file")
+args, _ = parser.parse_known_args()
 
-# 构建符合 PredictionTask 要求的参数
-task = PredictionTask(
-    task_id="t001",
-    task_question="""The event to be predicted: "What will be the low of NVDA stock be for the day on 2025-10-30?"
-    
+# 使用 TaskLoader 按 ID 加载任务；若未提供则回退到内置示例
+task = None
+if args.task_id:
+    from core.utils.task_loader import TaskLoader
+    if args.data_path:
+        loader = TaskLoader(data_path=args.data_path)
+    else:
+        try:
+            loader = TaskLoader()
+        except FileNotFoundError:
+            # fallback 到仓库内置数据文件 data/standardized_data.jsonl
+            project_root = Path(__file__).parent
+            fallback_path = project_root / "data" / "standardized_data.jsonl"
+            loader = TaskLoader(data_path=str(fallback_path))
+    task = loader.load_task_by_id(args.task_id)
+
+if task is None:
+    # 默认示例任务，便于直接运行脚本
+    task = PredictionTask(
+        task_id="demo_task",
+        task_question="""You are an agent that can predict future events. The event to be predicted: "What will be the low of NVDA stock (NVDA) for the day on 2025-10-30?"
+
 IMPORTANT: Your final answer MUST end with \\boxed{YOUR_PREDICTION} format, where YOUR_PREDICTION is a numerical value representing the predicted stock price.""",
-    metadata={
-        "end_time": "2025-10-30",
-        "dataset_name": "test_dataset"
-    }
-)
+        metadata={
+            "end_time": "2025-10-30",
+            "dataset_name": "demo",
+        },
+    )
+
+matcher = SmartMatcher()
+knowhow, match_result = matcher.match(task)
 
 agent = DecomposeAgent(llm)
+
+# 匹配结果
+print("=" * 80)
+print("KnowHow 匹配结果:")
+print("=" * 80)
+print(f"  ID: {match_result.metadata.id}")
+print(f"  来源: {match_result.matched_by}")
+print(f"  置信度: {match_result.confidence:.2f}")
+if match_result.reasoning:
+    print(f"  线索: {match_result.reasoning}")
+print()
 
 # 先看 prompt
 print("=" * 80)
@@ -149,4 +184,3 @@ for key, value in stats.items():
 print()
 
 print(f"📁 详细计划已保存至: {log_file}")
-

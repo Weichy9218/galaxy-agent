@@ -59,7 +59,9 @@ class BaseKnowHow:
 
     def plan_seed_for_planner(self, include_aggregation: bool = True) -> Dict[str, Any]:
         """
-        提供给 Decompose Agent 的“结构化种子”。aggregation 可选（默认 True）。
+        提供给 Decompose Agent 的“结构化种子”。
+        
+        aggregation 可选（默认 True）。
         """
         seed: Dict[str, Any] = {
             "task_type": self.task_type,

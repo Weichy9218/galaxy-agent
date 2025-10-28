@@ -19,7 +19,7 @@ from .base import BaseLLMClient, LLMResponse
 load_dotenv()
 
 
-class OpenRouterMiniClient(BaseLLMClient):
+class OpenRouterClient(BaseLLMClient):
     """
     OpenRouter 简化客户端，使用 GPT-4.1-mini
     
@@ -212,5 +212,5 @@ class OpenRouterMiniClient(BaseLLMClient):
                 )
 
     def __repr__(self):
-        return f"OpenRouterMiniClient(model={self.model}, temperature={self.temperature})"
+        return f"OpenRouterlient(model={self.model}, temperature={self.temperature})"
 
