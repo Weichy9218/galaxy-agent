@@ -1,7 +1,99 @@
-uv run python test_mini.py
-可以看到decompose的system prompt 和 user prompt，以及 DecompositionPlan（后续分解subagent的执行逻辑）
+# Galaxy Forecast Pipeline
 
-/Users/weichy/code/Galaxy/log中有json版本的DecompositionPlan
+Galaxy implements a multi-agent forecasting pipeline built around structured Know-How definitions and LLM-driven planning/synthesis. The current DAG is:
 
-我先搭建后面基于这个DecompositionPlan的agent逻辑，可飞、庄禹帮我检查一下这个prompt是否合适。
-以及结构化的prompt是否合适？
+```
+PredictionTask (core.utils.task_loader)
+    → Know-How selection (core.utils.smart_matcher)
+    → DecomposeAgent / Planner (pipeline.planner)
+    → SubAgent executor (pipeline.excutors.langgraph_plan_executor)
+    → SynthesisAgent (pipeline.synthesis)
+    → Final answer & logs
+```
+
+## 1. Environment Setup
+1. Install dependencies with `uv pip install -r pyproject.toml` or activate the existing `uv` environment.
+2. Provide an LLM API key (OpenRouter or OpenAI). The pipeline relies on GPT-5 compatible endpoints.
+   ```bash
+   export OPENROUTER_API_KEY=sk-...
+   export OPENROUTER_BASE_URL=https://api.openrouter.ai
+   ```
+   > If the key is missing the pipeline will hang while waiting for the remote LLM. For offline testing consider stubbing the LLM calls.
+
+## 2. Running the Orchestrator
+The orchestrator executes the full pipeline for a single task.
+```bash
+uv run python pipeline/orchestrator.py --task-id 6851736beb11c800614780df
+```
+Optional flags:
+- `--data-path`: alternate JSONL dataset (defaults to `data/standardized_data.jsonl`).
+- `--log-dir`: output directory for intermediate artifacts (defaults to `log`).
+- `--enable-reasoning-llm`: turn on LLM-based reasoning inside the LangGraph executor (off by default).
+
+On success the command prints a JSON summary and writes three artifacts to `log/`:
+- `{task_id}_plan.json` – DecompositionPlan produced by the planner.
+- `{task_id}_execution.json` – SubAgent factor execution trace.
+- `{task_id}_synthesis.json` – Synthesis Agent narrative, supporting points, final answer.
+
+The final answer respects `PredictionTask.answer_instructions` (e.g. `\boxed{...}` format).
+
+## 3. Know-How Structure (JSON-based)
+All know-how definitions live under `knowhow_store/`:
+
+```
+knowhow_store/
+├── finance/
+│   ├── stock_price.json
+│   └── factors/
+│       ├── micro_trend.json
+│       ├── macro_sector_trend.json
+│       ├── valuation_correction.json
+│       └── event_news_impact.json
+├── general/
+│   ├── event_prediction.json
+│   └── factors/
+│       ├── event_scoping.json
+│       ├── historical_baseline.json
+│       ├── current_signals.json
+│       └── consensus_and_risk.json
+└── registry.py
+```
+
+### Editing or Adding Know-How
+1. Duplicate an existing domain JSON (e.g. `finance/stock_price.json`).
+2. Update metadata (`domain`, `sub_domain`, `task_type_aliases`, etc.).
+3. Place factor JSON files under the domain’s `factors/` subdirectory and reference them with `"$ref": "factors/..."`.
+4. The registry (`knowhow_store/registry.py`) discovers all JSON files automatically—no need to touch Python when editing.
+
+### Runtime Loading
+`core/utils/smart_matcher.SmartMatcher` calls `KnowHowRegistry.instantiate()` to load the freshest JSON definition each time a task is matched. Editing JSON and rerunning the pipeline will immediately pick up changes.
+
+## 4. Pipeline Components
+
+### Planner (`pipeline/planner/decompose_agent.py`)
+- Builds a decomposition prompt combining the task and Know-How seed.
+- Calls the LLM and parses the JSON plan into `DecompositionPlan`.
+- Ensures every factor output contract is covered, adding auto “write” steps for missing fields.
+
+### SubAgent Executor (`pipeline/excutors/langgraph_plan_executor.py`)
+- Converts each factor plan into a LangGraph state machine with Manager → Execute → Error handling nodes.
+- Tracks context, retries, reasoning, and optional replan via the planner.
+- Default tool registry provides mock data; enable `--enable-reasoning-llm` to let the executor call the `ReasoningTool` (GPT-based) when recovering from failures.
+
+### Synthesis Agent (`pipeline/synthesis/synthesis_agent.py`)
+- Builds a structured prompt summarizing plan, execution trace, and aggregation weights.
+- Requires the LLM to return JSON with narrative, supporting points, blended expected return/confidence, and final answer (respecting `answer_instructions`).
+
+## 5. Extending / Customizing
+- **Custom Tools**: swap in real data sources inside `pipeline/excutors/langgraph_plan_executor.ToolRegistry`.
+- **Reasoning LLM**: enable via orchestrator flag; ensure `ReasoningTool` has credentials.
+- **Fallback / Mock Mode**: to run offline, stub the LLM clients (`GPT5Client`) or provide deterministic responses.
+- **Know-How Expansion**: add new domain/factor JSON, list aliases, and the matcher will route tasks accordingly.
+
+## 6. Troubleshooting
+- **LLM hangs**: confirm API keys & network access; without them the pipeline waits indefinitely. Consider mocking during development.
+- **Plan validation errors**: inspect `{task_id}_plan.json` for missing `writes` or invalid factor names; update Know-How JSON accordingly.
+- **Executor errors**: check `{task_id}_execution.json` for reasoning decisions, retries, and replan traces.
+- **Synthesis**: `{task_id}_synthesis.json` includes raw LLM response for audit.
+
+Have fun editing the JSON Know-How and iterating on the SubAgent manager—most future work (tools、reasoning策略、fallback) 可以在不改 Python 的情况下完成。

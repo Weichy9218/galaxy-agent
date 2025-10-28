@@ -1,0 +1,123 @@
+{
+  "domain": "finance",
+  "sub_domain": "stock_price",
+  "description": "Predict stock closing price or price movement at a specific future date",
+  "applicable_scenarios": [
+    "Predict stock closing price at a future date",
+    "Predict whether stock price will rise or fall",
+    "Predict if stock will reach a certain price level",
+    "Estimate stock price change percentage",
+    "Forecast stock valuation changes"
+  ],
+  "key_concepts": [
+    "technical indicators",
+    "valuation metrics",
+    "macro trends",
+    "sector performance",
+    "earnings reports",
+    "market sentiment",
+    "price momentum",
+    "moving averages"
+  ],
+  "evaluation_criteria": {
+    "timeliness": "Recent (<=30d) gets highest weight; >90d down-weighted",
+    "source_reliability": "official > mainstream_media > analyst > social",
+    "technical_applicability": "Better on liquid large-caps; small-caps rely more on fundamentals",
+    "market_regime": "Bull markets favor trend; bear markets favor valuation",
+    "event_impact": "Structural > routine"
+  },
+  "allowed_tools": {
+    "financial_data": {
+      "hints": [
+        "ticker",
+        "range",
+        "interval",
+        "fields"
+      ],
+      "examples": [
+        {
+          "ticker": "NVDA",
+          "range": "60d",
+          "interval": "1d",
+          "fields": [
+            "open",
+            "high",
+            "low",
+            "close",
+            "volume"
+          ]
+        },
+        {
+          "ticker": "NVDA",
+          "range": "1y",
+          "interval": "1d",
+          "fields": [
+            "pe",
+            "pb",
+            "market_cap"
+          ]
+        }
+      ]
+    },
+    "web_search": {
+      "hints": [
+        "query",
+        "recency_days",
+        "limit"
+      ]
+    },
+    "reading": {
+      "hints": [
+        "url",
+        "selectors"
+      ]
+    },
+    "reasoning": {
+      "hints": [
+        "inputs",
+        "formula"
+      ]
+    }
+  },
+  "examples": [],
+  "aggregation_spec": {
+    "approach": "multi_factor_return_decomposition",
+    "initial_weights": {
+      "micro_trend": 0.55,
+      "macro_sector_trend": 0.25,
+      "valuation_correction": 0.12,
+      "event_news_impact": 0.08
+    },
+    "horizon_rules": {
+      "<=1w": "weight_up(micro_trend,+0.2); weight_down(valuation_correction,-0.1)",
+      ">=1m": "weight_up(valuation_correction,+0.15); weight_down(micro_trend,-0.15)"
+    },
+    "conflict_rules": {
+      "micro_vs_valuation_strong_conflict": "if both conf>0.7 and opposite, apply 0.2 penalty to overall confidence"
+    },
+    "formula_note": "E(r)=Σ w_i * r_i; confidence=Σ w_i * c_i * (1 - conflict_penalty)"
+  },
+  "decomposition_strategy": {
+    "description": "Decompose expected return into micro/macro/valuation/event sub-problems",
+    "factors": [
+      {
+        "$ref": "factors/micro_trend.json"
+      },
+      {
+        "$ref": "factors/macro_sector_trend.json"
+      },
+      {
+        "$ref": "factors/valuation_correction.json"
+      },
+      {
+        "$ref": "factors/event_news_impact.json"
+      }
+    ]
+  },
+  "task_type_aliases": [
+    "finance.stock_price",
+    "stock_price",
+    "stock_intraday_low",
+    "stock_intraday_high"
+  ]
+}

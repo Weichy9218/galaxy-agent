@@ -1,0 +1,60 @@
+{
+  "domain": "general",
+  "sub_domain": "event_prediction",
+  "description": "Universal framework for discrete event outcome forecasting",
+  "applicable_scenarios": [
+    "体育或电竞比赛的胜负预测",
+    "重大政策、法规或宏观事件的发生概率",
+    "企业财报、产品发布或并购是否达成",
+    "多选题形式的离散结果预测任务",
+    "需要综合历史、现势、专家观点的事件判断"
+  ],
+  "key_concepts": [
+    "baseline probability",
+    "rough order-of-magnitude reasoning",
+    "recent momentum vs structural pattern",
+    "expert/market consensus",
+    "risk and tail scenarios",
+    "option canonicalization"
+  ],
+  "evaluation_criteria": {
+    "recency": "近期(<=14天)信息优先；超出90天仅作为背景",
+    "source_quality": "权威机构 > 主流媒体 > 专家评论 > 社交媒体传闻",
+    "signal_strength": "量化信号要给出样本规模或指标强度",
+    "consensus_alignment": "与主流赔率/投票一致但须说明差异来源",
+    "risk_noting": "识别黑天鹅或关键不确定性并评估影响方向"
+  },
+  "allowed_tools": {
+    "web_search": {"hints": ["query", "recency_days", "limit", "domains"]},
+    "structured_data": {"hints": ["entity", "metric", "lookback", "filter"]},
+    "reading": {"hints": ["url", "selectors"]},
+    "reasoning": {"hints": ["inputs", "formula", "assumptions"]}
+  },
+  "examples": [],
+  "aggregation_spec": {
+    "approach": "weighted_probability_blending",
+    "initial_weights": {
+      "event_scoping": 0.2,
+      "historical_baseline": 0.3,
+      "current_signals": 0.25,
+      "consensus_and_risk": 0.25
+    },
+    "horizon_rules": {},
+    "conflict_rules": {},
+    "formula_note": "Blend probability deltas and qualitative confidence across factors"
+  },
+  "decomposition_strategy": {
+    "description": "General-purpose decomposition for discrete event forecasting",
+    "factors": [
+      {"$ref": "factors/event_scoping.json"},
+      {"$ref": "factors/historical_baseline.json"},
+      {"$ref": "factors/current_signals.json"},
+      {"$ref": "factors/consensus_and_risk.json"}
+    ]
+  },
+  "task_type_aliases": [
+    "event_prediction",
+    "general.event_prediction",
+    "general/event_prediction"
+  ]
+}

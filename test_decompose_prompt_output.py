@@ -1,4 +1,5 @@
 """
+uv run python test_decompose_prompt_output.py --task-id 6851736beb11c800614780df
 使用 OpenRouterMiniClient 进行测试
 使用 gpt-4.1-mini 模型，成本更低
 """
@@ -9,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 
 from core.llm.openrouter_client import OpenRouterClient
-from planner.decompose_agent import DecomposeAgent
+from pipeline.planner.decompose_agent import DecomposeAgent
 from core.schemas.PredictionTask import PredictionTask
 from core.utils.smart_matcher import SmartMatcher
 

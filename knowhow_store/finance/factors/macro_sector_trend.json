@@ -1,0 +1,29 @@
+{
+  "name": "macro_sector_trend",
+  "agent_role": "macro analyst",
+  "tools": ["financial_data", "reasoning"],
+  "analysis_steps": [
+    "Market/sector context and relative strength vs SPY; map sector to SPDR ETF"
+  ],
+  "task_hints": [
+    "fetch: SPY 20d close; sector ETF 20d close; stock 20d close; stock metadata for sector/beta",
+    "compute: r_5d_index, r_5d_sector, r_20d_stock, RS_20d=r_20d_stock - r_20d_index",
+    "compute: Macro=0.5*r_5d_index + 0.3*r_5d_sector + 0.2*RS_20d",
+    "judge: sector_trend tiers by |r_5d_sector|; market_environment risk-on/off",
+    "write: expected_return=clip(Macro,±2%), confidence adjustments by alignment"
+  ],
+  "output_schema": {
+    "sector": "string",
+    "sector_trend": "strong_upward|moderate_upward|neutral|downward",
+    "sector_return_1m": "float",
+    "stock_beta": "float",
+    "expected_return": "float",
+    "confidence": "float",
+    "market_environment": {
+      "overall_market": "bullish|bearish|neutral"
+    },
+    "reasoning": "string"
+  },
+  "description": "Sector & market backdrop and relative strength",
+  "special_instructions": []
+}

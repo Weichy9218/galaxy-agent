@@ -1,0 +1,28 @@
+{
+  "name": "historical_baseline",
+  "agent_role": "historical analyst",
+  "tools": ["structured_data", "reasoning"],
+  "analysis_steps": [
+    "回顾主要参与方的近期表现或历史发生率",
+    "得出一个基础倾向并说明可信度"
+  ],
+  "task_hints": [
+    "列出最近的几场比赛/事件及结果",
+    "简单说明样本规模是否足够代表当前情境"
+  ],
+  "output_schema": {
+    "history_snapshot": [
+      {
+        "note": "string",
+        "outcome": "string"
+      }
+    ],
+    "baseline_view": "string",
+    "recommended_option": "string",
+    "probability_delta": "float",
+    "confidence": "float",
+    "reasoning": "string"
+  },
+  "description": "基于历史或先验角度的初步倾向",
+  "special_instructions": []
+}

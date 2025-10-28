@@ -1,0 +1,23 @@
+{
+  "name": "consensus_and_risk",
+  "agent_role": "consensus analyst",
+  "tools": ["web_search", "reading", "reasoning", "structured_data"],
+  "analysis_steps": [
+    "查看外部共识或赔率信息",
+    "标记潜在风险点或竞争结果"
+  ],
+  "task_hints": [
+    "引用 1-2 个共识来源（赔率/民调/专家）",
+    "列出需要关注的高风险情景"
+  ],
+  "output_schema": {
+    "consensus_notes": ["string"],
+    "risk_flags": ["string"],
+    "recommended_option": "string",
+    "probability_delta": "float",
+    "confidence": "float",
+    "reasoning": "string"
+  },
+  "description": "对照外部观点并列出关键风险，辅助最终判断",
+  "special_instructions": []
+}

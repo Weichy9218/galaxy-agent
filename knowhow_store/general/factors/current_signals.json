@@ -1,0 +1,28 @@
+{
+  "name": "current_signals",
+  "agent_role": "situational analyst",
+  "tools": ["web_search", "reading", "reasoning"],
+  "analysis_steps": [
+    "关注最近发生的动态或消息",
+    "判断这些动态对结果的方向性影响"
+  ],
+  "task_hints": [
+    "列出 1-3 条最相关的新闻或状态更新",
+    "标注每条信息的影响方向（正/负/不确定）"
+  ],
+  "output_schema": {
+    "recent_events": [
+      {
+        "title": "string",
+        "impact": "positive|negative|neutral"
+      }
+    ],
+    "signal_direction": "positive|negative|neutral",
+    "recommended_option": "string",
+    "probability_delta": "float",
+    "confidence": "float",
+    "reasoning": "string"
+  },
+  "description": "整理即时信号并判断对结果的拉动方向",
+  "special_instructions": []
+}

@@ -1,0 +1,25 @@
+{
+  "name": "event_scoping",
+  "agent_role": "scenario architect",
+  "tools": ["reasoning"],
+  "analysis_steps": [
+    "概括事件核心要素（主语、时间、判定格式）",
+    "整理可选答案并标注需要进一步确认的关键信息"
+  ],
+  "task_hints": [
+    "使用任务字段提取事件描述、resolved_time、options",
+    "记录需要的占位符，如 ${event_date}、${primary_actor}"
+  ],
+  "output_schema": {
+    "event_summary": "string",
+    "decision_window": "string",
+    "options_checked": ["string"],
+    "placeholders": {"label": "value"},
+    "recommended_option": "string",
+    "probability_delta": "float",
+    "confidence": "float",
+    "reasoning": "string"
+  },
+  "description": "从原始问题转成标准化事件表述并列出关键占位符",
+  "special_instructions": []
+}

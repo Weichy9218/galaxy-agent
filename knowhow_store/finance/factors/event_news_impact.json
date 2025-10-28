@@ -1,0 +1,34 @@
+{
+  "name": "event_news_impact",
+  "agent_role": "news analyst",
+  "tools": ["web_search", "reading", "reasoning"],
+  "analysis_steps": [
+    "Time-decayed sentiment + earnings surprise proxy; prefer official filings/PR"
+  ],
+  "task_hints": [
+    "fetch: web_search last 14d; queries include earnings/results/guidance/M&A/litigation/SEC",
+    "extract: parse article timestamp/source/event type; numeric surprises if present",
+    "compute: news_shock∈[-1,1] with source weights and exp(-age/7) decay",
+    "compute: fund_shock from EPS/Rev surprise if available else 0",
+    "compute: epsilon_event=clip(0.5*fund_shock+0.5*news_shock,[-1,1])",
+    "judge: overall_sentiment/impact_duration by epsilon_event and event type",
+    "write: expected_return=clip(epsilon_event*0.02,±4%), confidence by source & corroboration"
+  ],
+  "output_schema": {
+    "events": [
+      {
+        "event": "string",
+        "date": "YYYY-MM-DD",
+        "category": "enum",
+        "sentiment": "enum"
+      }
+    ],
+    "overall_sentiment": "positive|neutral|negative",
+    "expected_return": "float",
+    "confidence": "float",
+    "impact_duration": "short_term|medium_term|long_term",
+    "reasoning": "string"
+  },
+  "description": "Recent events & news shock normalization",
+  "special_instructions": []
+}

@@ -12,7 +12,7 @@ from core.schemas.plan import (
     TaskItem,
     validate_plan,
 )
-from planner.decompose_prompter import (
+from pipeline.planner.decompose_prompter import (
     build_decompose_prompt,
     DECOMPOSE_OUTPUT_JSON_SCHEMA,
 )
@@ -31,10 +31,16 @@ class DecomposeAgent:
         system, user = build_decompose_prompt(task, knowhow, DECOMPOSE_OUTPUT_JSON_SCHEMA)
         return f"--- SYSTEM ---\n{system}\n\n--- USER ---\n{user}"
 
+    # 让 llm 来根据system 和 user prompt 输出新的 decompose plan
     def plan(self, task: PredictionTask, knowhow: BaseKnowHow) -> DecompositionPlan:
         system, user = build_decompose_prompt(task, knowhow, DECOMPOSE_OUTPUT_JSON_SCHEMA)
         raw = self._call_llm(system, user)
+        
+        # print(raw)
+
         obj = self._extract_json(raw)
+
+        # print(obj)
 
         # 映射 JSON -> dataclass
         factors: List[FactorExecutionPlan] = []
@@ -50,6 +56,8 @@ class DecomposeAgent:
                 notes=f.get("notes", "") or "",
             )
             factors.append(fep)
+
+        self._ensure_output_coverage(factors, knowhow)
 
         plan = DecompositionPlan(
             task=task,
@@ -78,16 +86,14 @@ class DecomposeAgent:
         ]
         
         # 调用 LLM
-        result = self.llm.chat(messages=messages, temperature=0,response_format=DecomposeOutput)
-        
-        # 如果是协程（异步），则同步执行
+        result = self.llm.chat(messages=messages, temperature=0)
+
         if asyncio.iscoroutine(result):
             result = asyncio.run(result)
-        
-        # 提取内容（处理 LLMResponse 对象或字符串）
-        if hasattr(result, 'content'):
+
+        if hasattr(result, "content"):
             return result.content
-        
+
         return str(result)
 
     def _extract_json(self, text: str) -> Dict[str, Any]:
@@ -113,3 +119,64 @@ class DecomposeAgent:
             compute=t.get("compute"),
             writes=t.get("writes", []) or [],
         )
+
+    def _ensure_output_coverage(
+        self,
+        factors: List[FactorExecutionPlan],
+        knowhow: BaseKnowHow,
+    ) -> None:
+        """
+        若 LLM 漏写某些 output_contract 字段，自动补充占位 write 任务，
+        以避免计划验证阶段直接失败。后续执行器可视情况替换这些占位任务。
+        """
+        for factor in factors:
+            spec = knowhow.factor_by_name(factor.factor_name)
+            if not spec:
+                continue
+
+            spec_keys = list(spec.output_schema.keys())
+            factor.output_fields = spec_keys
+
+            existing_ids = {task.id for task in factor.tasks}
+            written = {field for task in factor.tasks for field in task.writes}
+            missing = [key for key in spec_keys if key not in written]
+
+            for key in missing:
+                task_id = self._generate_unique_task_id(existing_ids, prefix=f"auto_{key}")
+                existing_ids.add(task_id)
+                factor.tasks.append(
+                    TaskItem(
+                        id=task_id,
+                        kind="write",
+                        goal=f"补充写入 {key}（自动生成）",
+                        tool=None,
+                        params={},
+                        compute=f"总结前序步骤结果，填充 {key} 字段。",
+                        writes=[key],
+                    )
+                )
+
+    @staticmethod
+    def _generate_unique_task_id(existing_ids: set, prefix: str) -> str:
+        base = prefix.replace(" ", "_")
+        if base not in existing_ids:
+            return base
+        idx = 1
+        candidate = f"{base}_{idx}"
+        while candidate in existing_ids:
+            idx += 1
+            candidate = f"{base}_{idx}"
+        return candidate
+
+    def replan_factor(
+        self,
+        task: PredictionTask,
+        knowhow: BaseKnowHow,
+        factor_name: str,
+    ) -> FactorExecutionPlan:
+        """重新规划单个因子。当前实现为整体重跑 plan 后取对应因子。"""
+        plan = self.plan(task, knowhow)
+        for factor in plan.factors:
+            if factor.factor_name == factor_name:
+                return factor
+        raise ValueError(f"Factor {factor_name} not found in new plan")

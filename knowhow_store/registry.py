@@ -1,169 +1,175 @@
-# knowhow_store/registry.py
-"""
-Know-How 注册表
-
-根据当前项目结构（knowhow_store/*）动态发现所有继承自 BaseKnowHow 的类，
-并提供按 task_type / domain / 关键字 的检索能力。
-"""
-
 from __future__ import annotations
 
-import importlib
-import inspect
-from dataclasses import dataclass, field
+import json
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Set, Type
+from typing import Any, Dict, List, Optional, Tuple
 
-from core.schemas.knowhow_base import BaseKnowHow
+from core.schemas.knowhow_base import (
+    BaseKnowHow,
+    FactorSpec,
+    AggregationSpec,
+    DecompositionStrategy,
+)
 
 
 @dataclass
 class KnowHowMetadata:
-    """描述单个 Know-How 的静态信息。"""
-
-    cls: Type[BaseKnowHow]
-    module: str
-    name: str
     domain: str
     sub_domain: str
-    task_type: str
     description: str
-    applicable_scenarios: List[str] = field(default_factory=list)
-    key_concepts: List[str] = field(default_factory=list)
-    task_type_aliases: List[str] = field(default_factory=list)
+    applicable_scenarios: List[str]
+    key_concepts: List[str]
+    examples: List[str]
+    task_type_aliases: List[str]
+    source_path: Path
 
     @property
-    def id(self) -> str:
+    def task_type(self) -> str:
         return f"{self.domain}.{self.sub_domain}"
 
     @property
-    def keywords(self) -> Set[str]:
-        tokens: Set[str] = set()
+    def keywords(self) -> set[str]:
+        tokens: set[str] = set()
         fields = [
             self.domain,
             self.sub_domain,
             self.description,
             *self.applicable_scenarios,
             *self.key_concepts,
+            *self.examples,
             *self.task_type_aliases,
         ]
         for field in fields:
-            tokens.update(_tokenize(field))
+            for chunk in str(field).replace("/", " ").replace("_", " ").split():
+                cleaned = "".join(c for c in chunk.lower() if c.isalnum())
+                if len(cleaned) >= 3:
+                    tokens.add(cleaned)
         return tokens
 
 
 class KnowHowRegistry:
-    """
-    动态加载 knowhow_store 下的所有 BaseKnowHow 子类。
-
-    使用方式：
-        registry = KnowHowRegistry()
-        meta = registry.get("finance.stock_price")
-        knowhow_cls = meta.cls
-    """
-
-    def __init__(
-        self,
-        search_root: Optional[Path] = None,
-        package_prefix: str = "knowhow_store",
-    ) -> None:
-        self._package_prefix = package_prefix
-        self._root = search_root or Path(__file__).resolve().parent
-        self._loaded: Dict[str, KnowHowMetadata] = {}
-        self._fallback: Optional[KnowHowMetadata] = None
+    def __init__(self, base_dir: Optional[Path] = None):
+        self.base_dir = base_dir or Path(__file__).resolve().parent
+        self._knowhows: Dict[str, Tuple[BaseKnowHow, KnowHowMetadata]] = {}
         self._discover()
 
-    # --------- 公共接口 ---------
+    # public API -----------------------------------------------------
 
     def all(self) -> List[KnowHowMetadata]:
-        return list(self._loaded.values())
+        return [meta for _, meta in self._knowhows.values()]
 
     def get(self, task_type: str) -> Optional[KnowHowMetadata]:
         key = task_type.replace("/", ".")
-        if key in self._loaded:
-            return self._loaded[key]
+        entry = self._knowhows.get(key)
+        if entry:
+            return entry[1]
 
-        # 允许只写 sub_domain
-        for meta in self._loaded.values():
-            if key == meta.sub_domain:
+        for _, meta in self._knowhows.values():
+            aliases = {alias.replace("/", ".") for alias in meta.task_type_aliases}
+            if key in aliases:
                 return meta
         return None
 
-    def get_by_domain(self, domain: str) -> List[KnowHowMetadata]:
-        return [m for m in self._loaded.values() if m.domain == domain]
+    def lookup_instance(self, task_type: str) -> Optional[BaseKnowHow]:
+        key = task_type.replace("/", ".")
+        entry = self._knowhows.get(key)
+        if entry:
+            return entry[0]
+        for inst, meta in self._knowhows.values():
+            aliases = {alias.replace("/", ".") for alias in meta.task_type_aliases}
+            if key in aliases:
+                return inst
+        return None
 
     def fallback(self) -> Optional[KnowHowMetadata]:
-        return self._fallback
+        for _, meta in self._knowhows.values():
+            if meta.domain == "general":
+                return meta
+        return next(iter(self.all()), None)
 
-    # --------- 内部实现 ---------
+    # discovery -----------------------------------------------------
 
     def _discover(self) -> None:
-        for py_file in self._iter_python_files(self._root):
-            module_name = self._module_name_for(py_file)
-            if not module_name:
+        for json_path in self.base_dir.rglob("*.json"):
+            if "factors" in json_path.parts:
                 continue
+            data = self._load_json(json_path)
+            instance = self._build_knowhow(json_path, data)
+            meta = KnowHowMetadata(
+                domain=data["domain"],
+                sub_domain=data["sub_domain"],
+                description=data.get("description", ""),
+                applicable_scenarios=data.get("applicable_scenarios", []),
+                key_concepts=data.get("key_concepts", []),
+                examples=data.get("examples", []),
+                task_type_aliases=data.get("task_type_aliases", []),
+                source_path=json_path,
+            )
+            key = meta.task_type
+            self._knowhows[key] = (instance, meta)
 
-            try:
-                module = importlib.import_module(module_name)
-            except Exception:
-                continue
-
-            for _, obj in inspect.getmembers(module, inspect.isclass):
-                if not issubclass(obj, BaseKnowHow) or obj is BaseKnowHow:
-                    continue
-                if obj.__module__ != module_name:
-                    continue
-                self._register(obj, module_name)
-
-    def _register(self, cls: Type[BaseKnowHow], module_name: str) -> None:
-        instance = cls()
-        aliases = set(getattr(instance, "task_type_aliases", []))
-        aliases.update(getattr(cls, "TASK_TYPE_ALIASES", []))
-
-        meta = KnowHowMetadata(
-            cls=cls,
-            module=module_name,
-            name=cls.__name__,
-            domain=instance.domain,
-            sub_domain=instance.sub_domain,
-            task_type=instance.task_type,
-            description=instance.description,
-            applicable_scenarios=list(instance.applicable_scenarios),
-            key_concepts=list(instance.key_concepts),
-            task_type_aliases=sorted(aliases),
+    def _build_knowhow(self, base_path: Path, data: Dict[str, any]) -> BaseKnowHow:
+        aggregation = self._build_aggregation(data.get("aggregation_spec"))
+        factors = [
+            self._load_factor(base_path.parent / factor_ref["$ref"])
+            if "$ref" in factor_ref
+            else self._factor_from_dict(factor_ref)
+            for factor_ref in data.get("decomposition_strategy", {}).get("factors", [])
+        ]
+        decomp = DecompositionStrategy(
+            description=data.get("decomposition_strategy", {}).get("description", ""),
+            factors=factors,
+            aggregation=aggregation,
         )
-        self._loaded[meta.task_type] = meta
 
-        if meta.domain == "general" and self._fallback is None:
-            self._fallback = meta
+        return BaseKnowHow(
+            domain=data["domain"],
+            sub_domain=data["sub_domain"],
+            description=data.get("description", ""),
+            applicable_scenarios=data.get("applicable_scenarios", []),
+            key_concepts=data.get("key_concepts", []),
+            examples=data.get("examples", []),
+            evaluation_criteria=data.get("evaluation_criteria", {}),
+            allowed_tools=data.get("allowed_tools", {}),
+            decomposition=decomp,
+        )
 
-    def _module_name_for(self, path: Path) -> Optional[str]:
-        if path.name == "__init__.py":
+    def _build_aggregation(self, payload: Optional[Dict[str, Any]]) -> Optional[AggregationSpec]:
+        if not payload:
             return None
-        try:
-            relative = path.relative_to(self._root).with_suffix("")
-        except ValueError:
-            return None
+        return AggregationSpec(
+            approach=payload.get("approach", ""),
+            initial_weights=payload.get("initial_weights", {}),
+            horizon_rules=payload.get("horizon_rules", {}),
+            conflict_rules=payload.get("conflict_rules", {}),
+            formula_note=payload.get("formula_note", ""),
+        )
 
-        parts = [self._package_prefix, *relative.parts]
-        return ".".join(parts)
+    def _load_factor(self, path: Path) -> FactorSpec:
+        data = self._load_json(path)
+        return self._factor_from_dict(data)
+
+    def _factor_from_dict(self, data: Dict[str, Any]) -> FactorSpec:
+        return FactorSpec(
+            name=data["name"],
+            description=data.get("description", ""),
+            agent_role=data.get("agent_role", ""),
+            tools=data.get("tools", []),
+            analysis_steps=data.get("analysis_steps", []),
+            output_schema=data.get("output_schema", {}),
+            task_hints=data.get("task_hints", []),
+            special_instructions=data.get("special_instructions", []),
+        )
 
     @staticmethod
-    def _iter_python_files(root: Path) -> Iterable[Path]:
-        for py in root.rglob("*.py"):
-            if "__pycache__" in py.parts:
-                continue
-            if py == Path(__file__):
-                continue
-            yield py
+    def _load_json(path: Path) -> Dict[str, Any]:
+        with path.open("r", encoding="utf-8") as f:
+            return json.load(f)
+
+    def instantiate(self, metadata: KnowHowMetadata) -> BaseKnowHow:
+        data = self._load_json(metadata.source_path)
+        return self._build_knowhow(metadata.source_path, data)
 
 
-# --------- 辅助函数 ---------
-
-def _tokenize(text: str) -> Set[str]:
-    tokens: Set[str] = set()
-    for chunk in text.replace("/", " ").replace("-", " ").replace("_", " ").split():
-        chunk = "".join(ch for ch in chunk.lower() if ch.isalnum())
-        if len(chunk) >= 3:
-            tokens.add(chunk)
-    return tokens
+__all__ = ["KnowHowRegistry", "KnowHowMetadata"]

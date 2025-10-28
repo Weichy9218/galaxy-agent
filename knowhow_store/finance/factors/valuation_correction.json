@@ -1,0 +1,28 @@
+{
+  "name": "valuation_correction",
+  "agent_role": "fundamental analyst",
+  "tools": ["financial_data", "reasoning"],
+  "analysis_steps": [
+    "Valuation mean-reversion signal using PE/PB 52w z-scores; coverage-based confidence"
+  ],
+  "task_hints": [
+    "fetch: 1y daily PE/PB",
+    "compute: current_PE, historical_avg_PE, z_PE_52w; 同理 PB",
+    "compute: Val = -0.5*z_PE_52w - 0.5*z_PB_52w",
+    "judge: correction_direction from Val sign and |Val| tiers",
+    "write: expected_return=clip(Val*0.005,±1%), confidence by coverage and |z|"
+  ],
+  "output_schema": {
+    "valuation_status": "overvalued|fairly_valued|undervalued",
+    "current_PE": "float",
+    "historical_avg_PE": "float",
+    "current_PB": "float",
+    "historical_avg_PB": "float",
+    "correction_direction": "downward|neutral|upward",
+    "expected_return": "float",
+    "confidence": "float",
+    "reasoning": "string"
+  },
+  "description": "Mean-reversion pressure from valuation deviation",
+  "special_instructions": []
+}

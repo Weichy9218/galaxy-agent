@@ -42,8 +42,6 @@ class SmartMatcher:
             return self._instantiate(meta, matched_by="task_type", confidence=0.95)
 
         meta, score, explanation = self._match_by_keywords(task)
-        print('*' * 30)
-        print(meta, score, explanation)
         if meta:
             confidence = min(0.9, 0.3 + score * 0.1)
             return self._instantiate(
@@ -70,7 +68,7 @@ class SmartMatcher:
         confidence: float,
         reasoning: Optional[str] = None,
     ) -> Tuple[BaseKnowHow, MatchResult]:
-        instance = meta.cls()
+        instance = self.registry.instantiate(meta)
         result = MatchResult(
             metadata=meta,
             confidence=confidence,

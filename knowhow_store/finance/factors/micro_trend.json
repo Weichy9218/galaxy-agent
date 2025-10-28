@@ -1,0 +1,29 @@
+{
+  "name": "micro_trend",
+  "agent_role": "quantitative analyst",
+  "tools": ["financial_data", "reasoning"],
+  "analysis_steps": [
+    "Technical micro trend from OHLCV (60d) with r_5d, MA20 gap, RSI14 normalization",
+    "Clip extreme signals; align sign consistency; compute strength score"
+  ],
+  "task_hints": [
+    "fetch: 60d OHLCV with 1d interval",
+    "compute: r_5d, MA20, gap_MA20=(close_0-MA20_0)/MA20_0, RSI14, RSI_14_norm=(RSI14-50)/50 clipped [-1,1]",
+    "compute: Micro=0.5*r_5d + 0.3*gap_MA20 + 0.2*RSI_14_norm",
+    "judge: trend_direction by Micro thresholds (+1%/-1%) and strength tiers",
+    "write: expected_return=clip(Micro,±3%), confidence based on indicator alignment"
+  ],
+  "output_schema": {
+    "trend_direction": "upward|downward|neutral",
+    "strength_score": "float(-1..1)",
+    "expected_return": "float",
+    "confidence": "float",
+    "key_indicators": {
+      "MA_signal": "golden_cross|death_cross|neutral",
+      "RSI": "int(0..100)"
+    },
+    "reasoning": "string"
+  },
+  "description": "Micro trend via price/volume technicals",
+  "special_instructions": []
+}
